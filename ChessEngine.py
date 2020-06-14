@@ -19,6 +19,10 @@ class GameState():
         
         self.whiteToMove = True
         self.movelog = []
+        self.whiteKingLocation = (7 , 4)
+        self.blackKingLocation = (0 , 4)
+        self.checkMate = False
+        self.staleMate = False
     '''
     récup le coup comme un paramètre et l'éxécute'''
     
@@ -27,6 +31,10 @@ class GameState():
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.movelog.append(move)
         self.whiteToMove = not self.whiteToMove #tour
+        if move.pieceMoved == "wK":
+            self.whiteKingLocation = (move.endRow, move.endCol)
+        elif move.pieceMoved == "bK":
+            self.blackKingLocation = (move.endRow, move.endCol)
     
     
     def undoMove(self):
@@ -35,15 +43,57 @@ class GameState():
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.whiteToMove = not self.whiteToMove
+            if move.pieceMoved == "wK":
+                self.whiteKingLocation = (move.startRow, move.startCol)
+        elif move.pieceMoved == "bK":
+            self.blackKingLocation = (move.startRow, move.startCol)
 
     '''
     tous les coups sont vérifs
     '''
     def getValidMoves(self):
-        return self.getAllPossibleMoves()
+        moves = self.getAllPossibleMoves()
+        for i in range(len(moves)-1, -1, -1):
+            self.makeMove(moves[i])
+            self.whiteToMove = not self.whiteToMove
+            if self.inCheck():
+                moves.remove(moves[i])
+            self.whiteToMove = not self.whiteToMove
+            self.undoMove()
+            
+        if len(moves) == 0:
+            if self.inCheck():
+                self.checkMate = True
+            else:
+                self.staleMate = True
+        else:
+            self.checkMate = False
+            self.staleMate = False
+        return moves
+    '''détermine si le joueur est en échec'''
+    def inCheck(self):
+        if self.whiteToMove:
+            return self.squareUnderAttack(self.whiteKingLocation[0], self.whiteKingLocation[1])
+        else:
+            return self.squareUnderAttack(self.blackKingLocation[0], self.blackKingLocation[1])
+        
+        
+        
+    '''détermine si l'ennemi peut oui ou non attaquer le carré r c'''
+    def squareUnderAttack(self, r, c):
+        self.whiteToMove = not self.whiteToMove
+        oppMoves = self.getAllPossibleMoves()
+        self.whiteToMove = not self.whiteToMove
+        for move in oppMoves:
+            if move.endRow == r and move.endCol == c:
+                return True
+        return False
+
+
+
 
     '''
-    tous les coups sans aucune vérifs
+    tous les coups
     '''
     
     def getAllPossibleMoves(self):
