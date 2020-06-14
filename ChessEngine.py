@@ -14,6 +14,9 @@ class GameState():
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
         ]
+        self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
+                              'B': self.getBishopMoves, 'K': self.getKingMoves, 'Q': self.getQueenMoves}
+        
         self.whiteToMove = True
         self.movelog = []
     '''
@@ -44,22 +47,45 @@ class GameState():
     '''
     
     def getAllPossibleMoves(self):
-        moves = [Move((6,4), (4,4), self.board)]
+        moves = []
         for r in range(len(self.board)): #nb de lignes
             for c in range(len(self.board[r])): #nb de colones
                 turn = self.board[r][c][0]
-                if (turn == 'w' and self.whiteToMove) and (turn == 'b' and not self.whiteToMove):
+                if (turn == 'w' and self.whiteToMove) or (turn == 'b' and not self.whiteToMove):
                     piece = self.board[r][c][1]
-                    if piece == 'p':
-                        self.getPawnMoves(r, c, moves)
-                    elif piece == 'R':
-                        self.getRookMoves(r, c, moves)
+                    self.moveFunctions[piece](r, c, moves)
         return moves
 
     def getPawnMoves(self, r, c, moves):
+        if self.whiteToMove: #pions blancs
+            if self.board[r-1][c] == "--": #1 carré
+                moves.append(Move((r, c), (r-1, c), self.board))
+                if r == 6 and self.board[r-2][c] == "--": #2 carré
+                    moves.append(Move((r, c), (r-2, c), self.board))
+            if c-1 >= 0: #capture à gauche
+                if self.board[r-1][c-1][0] == 'b': 
+                    moves.append(Move((r, c), (r-1, c-1), self.board))
+            if c+1 <= 7:#capture à droite
+                if self.board[r-1][c+1][0] == 'b':
+                    moves.append(Move((r, c), (r-1, c+1), self.board))
+        else:
+            pass
+
+
+
+    def getRookMoves(self, r, c, moves):
         pass
     
-    def getRookMoves(self, r, c, moves):
+    def getKnightMoves(self, r, c, moves):
+        pass
+    
+    def getBishopMoves(self, r, c, moves):
+        pass
+    
+    def getKingMoves(self, r, c, moves):
+        pass
+    
+    def getQueenMoves(self, r, c, moves):
         pass
 
 
