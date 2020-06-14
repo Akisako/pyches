@@ -17,7 +17,6 @@ def loadImages():
         IMAGES[piece] = p.transform.scale(p.image.load("asset/" + piece +".png"), (SQ_SIZE, SQ_SIZE))
     #l'on peut mtn accéder à une image en l'appelant ex: IMAGES['wp']
     
-    
     '''
     code principal : s'occupe des input de l'utilisateur and update les graphismes
     '''
