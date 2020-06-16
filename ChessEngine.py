@@ -23,6 +23,7 @@ class GameState():
         self.blackKingLocation = (0 , 4)
         self.checkMate = False
         self.staleMate = False
+        self.enpassantPossible = () #coordonnée du carré où le en passant peut être effectué
     '''
     récup le coup comme un paramètre et l'éxécute'''
     
@@ -38,6 +39,14 @@ class GameState():
     #promotion du pion
         if move.isPawnPromotion:
             self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
+    #en passant
+        if move.isEnpassantMove:
+            self.board[move.startRow][move.endCol] = '--' #capture le pion
+    #met à jour la variable enpassantPossible
+        if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
+            self.enpassantPossible = ((move.startRow + move.endRow)//2, move.startCol)
+        else:
+            self.enpassantPossible = ()
     
     def undoMove(self):
         if len(self.movelog) != 0: #permet de s'assurer que il y a un coup à annuler
@@ -49,11 +58,20 @@ class GameState():
                 self.whiteKingLocation = (move.startRow, move.startCol)
         elif move.pieceMoved == "bK":
             self.blackKingLocation = (move.startRow, move.startCol)
+        #annuler un en passant
+        if move.isEnpassantMove:
+            self.board[move.endRow][move.endCol] = '--'
+            self.board[move.startRow][move.endCol] = move.pieceCaptured
+            self.enpassantPossible = (move.endRow, move.endCol)
+        #annuler une avancée de 2 cases
+        if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
+            self.enpassantPossible = ()
 
     '''
     tous les coups sont vérifs
     '''
     def getValidMoves(self):
+        tempEnpassantPossible = self.enpassantPossible
         moves = self.getAllPossibleMoves()
         for i in range(len(moves)-1, -1, -1):
             self.makeMove(moves[i])
@@ -71,6 +89,9 @@ class GameState():
         else:
             self.checkMate = False
             self.staleMate = False
+            
+            
+        self.enpassantPossible = tempEnpassantPossible
         return moves
     '''détermine si le joueur est en échec'''
     def inCheck(self):
@@ -117,9 +138,13 @@ class GameState():
             if c-1 >= 0: #capture à gauche
                 if self.board[r-1][c-1][0] == 'b': 
                     moves.append(Move((r, c), (r-1, c-1), self.board))
+                elif (r-1, c-1) == self.enpassantPossible:
+                    moves.append(Move((r, c), (r-1, c-1), self.board, isEnpassantMove=True))
             if c+1 <= 7:#capture à droite
                 if self.board[r-1][c+1][0] == 'b':
                     moves.append(Move((r, c), (r-1, c+1), self.board))
+                elif (r-1, c+1) == self.enpassantPossible:
+                    moves.append(Move((r, c), (r-1, c+1), self.board, isEnpassantMove=True))
         else:#pion noir
             if self.board[r + 1][c] == "--":
                 moves.append(Move((r,c), (r + 1, c), self.board))
@@ -129,9 +154,13 @@ class GameState():
             if c - 1 >= 0: #capture à gauche
                 if self.board[r+1][c-1][0] == 'w': 
                     moves.append(Move((r, c), (r + 1, c - 1), self.board))
+                elif (r+1, c-1) == self.enpassantPossible:
+                    moves.append(Move((r, c), (r+1, c-1), self.board, isEnpassantMove=True))
             if c + 1 <= 7:#capture à droite
                 if self.board[r + 1][c + 1][0] == 'w':
                     moves.append(Move((r, c), (r + 1, c + 1), self.board))
+                elif (r+1, c+1) == self.enpassantPossible:
+                    moves.append(Move((r, c), (r+1, c+1), self.board, isEnpassantMove=True))
 
 
 
@@ -215,16 +244,24 @@ class Move():
                    "e" : 4, "f" : 5, "g" : 6, "h" : 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
     
-    def __init__(self, startSq, endSq, board):
+    def __init__(self, startSq, endSq, board, isEnpassantMove = False):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
+        #promotion pion
         self.isPawnPromotion = False
         if (self.pieceMoved == 'wp' and self.endRow == 0) or (self.pieceMoved == 'bp' and self.endRow == 7):
             self.isPawnPromotion = True
+        #en passant
+        self.isEnpassantMove = isEnpassantMove
+        if self.isEnpassantMove:
+            self.pieceCaptured = 'wp' if self.pieceMoved == 'bp' else 'bp'
+        
+        
+        
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
 
 
