@@ -51,11 +51,14 @@ def main():
                 if len(playerClicks) == 2: #après le deuxième click
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
                     print(move.getChessNotation())
-                    if move in validMoves:
-                        gs.makeMove(move)
-                        moveMade = True
-                    sqSelected = () #reset le click
-                    playerClicks = []
+                    for i in range(len(validMoves)):
+                        if move == validMoves[i]:
+                            gs.makeMove(validMoves[i])
+                            moveMade = True
+                            sqSelected = () #reset le click
+                            playerClicks = []
+                    if not moveMade:
+                        playerClicks = [sqSelected]
             #clavier
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z: #annule le coup quand w(w = z en qwerty) est pressé
